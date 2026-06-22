@@ -16,8 +16,8 @@ Que hace:
 
 Diseno:
   - Sin dependencias pesadas. Solo rapidfuzz (pip install rapidfuzz).
-  - El ID usa SHA-256 truncado sobre el nombre normalizado -> reproducible,
-    sirve como clave en MySQL/BigQuery y para deduplicar entre corridas.
+  - El ID usa SHA-256 truncado sobre el nombre crudo (renglon original) ->
+    reproducible, unico por renglon, sirve como clave en MySQL/BigQuery.
 
 Uso rapido (CLI):
     python normalizador_catalogo.py --catalogo catalogo_ebs.csv \
@@ -118,11 +118,13 @@ def normalizar(nombre: str) -> str:
     return " ".join(toks).strip()
 
 
-def generar_id(nombre_normalizado: str, prefijo: str = "INS") -> str:
-    """ID estable y determinista. Mismo nombre normalizado -> mismo ID."""
-    if not nombre_normalizado:
-        nombre_normalizado = "__VACIO__"
-    h = hashlib.sha256(nombre_normalizado.encode("utf-8")).hexdigest()[:10].upper()
+def generar_id(nombre_crudo: str, prefijo: str = "INS") -> str:
+    """ID estable y determinista, unico por renglon (mismo nombre crudo ->
+    mismo ID siempre). Se hashea el nombre CRUDO (no el normalizado) para
+    no colisionar entre presentaciones distintas del mismo producto
+    (ej. "ACEITE VEGETAL 1 LT" vs "ACEITE VEGETAL 20 LT")."""
+    texto = " ".join((nombre_crudo or "__VACIO__").strip().upper().split())
+    h = hashlib.sha256(texto.encode("utf-8")).hexdigest()[:10].upper()
     return f"{prefijo}-{h}"
 
 
@@ -303,7 +305,7 @@ class Normalizador:
         res = ResultadoNormalizacion(
             nombre_original=nombre_crudo,
             nombre_normalizado=norm,
-            id=generar_id(norm, prefijo_id),
+            id=generar_id(nombre_crudo, prefijo_id),
             presentacion=extraer_presentacion(nombre_crudo),
             tolerancia=extraer_tolerancia(nombre_crudo),
         )
