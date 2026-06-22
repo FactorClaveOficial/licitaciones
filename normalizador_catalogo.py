@@ -57,7 +57,7 @@ STOPWORDS = set("""
 con tolerancia de del la el los las presentacion botella bote frasco lata
 galon porron caja bolsa pieza piezas pza pzas kg gr grs g ml mililitros litro
 litros lt gramaje primera calidad debera cumplir norma para en sin temperatura
-menor mayor aspecto color olor tacto libre marca cubeta granel su masa drenada
+menor mayor aspecto color olor tacto libre marca cubeta granel su
 tipo por que una un dos tres producto caracteristico textura superficie lisa
 polvo tierra humedad picadura insectos materias indeseables bien presentado
 fresco crujiente variedad hoja delgada hojas brillante tallo blanco atractivo
@@ -68,13 +68,17 @@ federal ssa secretaria salud salubridad asistencia onzas tetrapack
 # Unidades que reconocemos para extraer la presentacion.
 _UNIDAD_RE = re.compile(
     r"(\d+(?:[.,]\d+)?)\s*"
-    r"(kg|kilo|kilos|kilogramos?|g|gr|grs|gramos?|mg|"
+    r"(kg|kgs|kilo|kilos|kilogramos?|g|gr|grs|gramos?|mg|"
     r"l|lt|lts|litros?|ml|mililitros?|"
-    r"pza|pzas|piezas?|pieza|und|unidades?)\b",
+    r"pza|pzas|pz|pzs|piezas?|pieza|und|unidades?|"
+    r"onzas?|oz)\b",
     re.IGNORECASE,
 )
 
-_TOLERANCIA_RE = re.compile(r"[+]?/?[-]?\s*(\d+(?:[.,]\d+)?)\s*%")
+# Requiere signo +/- explicito antes del numero: distingue una tolerancia
+# real ("TOLERANCIA DE +/-10%", "+10%") de un porcentaje de composicion
+# del producto ("100% MAIZ", "30.5% SOLIDOS DE CACAO") que no lleva signo.
+_TOLERANCIA_RE = re.compile(r"[+\-]\s*/?\s*[+\-]?\s*(\d+(?:[.,]\d+)?)\s*%")
 
 
 def quitar_acentos(texto: str) -> str:
@@ -91,7 +95,7 @@ def quitar_acentos(texto: str) -> str:
 _CORTE_ESPEC = re.compile(
     r"\b(TEMPERATURA|GRAMAJE|PRESENTACION|CONSISTENCIA|DESCRIPCION|MEDIDAS|"
     r"FORMA|COLORACION|TEXTURA|ASPECTO|CARACTERISTIC|DEBERA|CUMPLIR|"
-    r"LIBRE DE|SIN INDICIOS|NO MAYOR|NO MENOR|CADA )\b"
+    r"LIBRE DE|SIN INDICIOS|NO MAYOR|NO MENOR|MASA DRENADA|CADA )\b"
 )
 
 # Tope duro de palabras para un nombre de producto (evita nombres-parrafo).
